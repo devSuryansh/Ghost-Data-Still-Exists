@@ -1,0 +1,115 @@
+## [2026-10-25T09:51:47Z] SESSION START
+
+tool=Cursor
+model=grok-4.7
+Repo Root: /home/suryansh/space/projects/Ghost-Data-Still-Exists
+Branch: main
+Worktree: main
+Parent Agent: Cursor
+Language: py
+Time Remaining: not configured
+
+## [2026-10-25T09:51:47Z] Planning the deletion-audit engine
+
+User Prompt (verbatim, secrets redacted):
+Obey ./AGENTS.md before any other work. Append the SESSION START entry, then a §5.2 entry for this turn, to the log.txt beside that file. tool= is the exact harness name from this runtime. model= is the exact model id from this runtime. Re-read the entry and fix it before you reply. Never log secrets. If you spawn a subagent or cloud agent, it appends to that same log with parent_agent set. Greet once as AGENTS.md requires. The challenge end time is not in the repo; do not invent one.
+
+Build Ghost Data Still Exists. Read problem_statement.md, README.md, and AGENTS.md in full. Use only dataset/. Never read organizer-only files, and never let the predictor read sample_output.csv or hardcoded labels. sample_output.csv is a test oracle only.
+
+Architecture, same boundary that held up on the September leaderboard: the model interprets, deterministic code decides. The model may do only two things, and neither may emit steps_json. (1) Intent: a typed deletion_authorized boolean plus a verbatim span that must occur in request_text. If the span is absent, ignore the model. (2) Vision and PDF: typed observations (resource_id, system_id, record_type, state, identifiers, captured_at), each field accepted only when it literally occurs in the extracted text. Hash-cache those calls. SQL, JSON, logs, and txt are parsed in code; load the .sql files in SQLite. Batch and cache. A per-case free-form tool loop is not the solver. If no model is configured, the intent fallback must still be multilingual and conservative, and unread images or PDFs must be recorded as gaps rather than invented facts. A clean run with no key must still write 518 contract-valid rows from the structured evidence.
+
+Decision procedure, fit to the 32 public cases before you touch the other 486:
+
+- deletion_status comes from request_text, not reported_status. Correction, access, export, invoice copy, login help, email or phone change, and "do not delete / leave the account" are NOT_APPLICABLE with steps_json []. Deletion in any language, including Portuguese exclusão and Japanese, is in scope. reported_status and reported_result are claims. NOT_STARTED can be truly COMPLETE, and COMPLETE can be truly INCOMPLETE.
+- Resolve email case-insensitively against user_identities.csv and every historical email, phone, and email_hash in user_audit_log.csv. About 100 request emails exist only in the audit log. Collect the subject's full identifier set. Link resources through activity, LINK_RESOURCE_IDENTITY, and evidence contents. Exact identifier match only. Similar local-parts are decoys.
+- State is as of that case's audit_at. Ignore later activity and any evidence_files.csv captured_at after the cutoff.
+- Build the subject's resource set across account_, search_, analytics_, support_, email_delivery_, cache_, audit_record_, export_, data_flow_, backup_, tombstone_, legal_hold_, marketing_, and object_. The 32 samples do not show every family; implement all 15 deletion_rules.csv rows. Do not assign one operation per system: analytics_ is sometimes DELETE_RECORD and sometimes ANONYMIZE_RECORD, and support_ is sometimes DELETE_RECORD (attachment belonging only to the subject) and sometimes REDACT_RECORD (shared conversation). Derive data_category and whether the rule condition holds.
+- A live replica still counts. Compare primary, regional, reporting, and failover snapshots. An enabled sync, import, or connector that can recreate the subject is REPORT_ACTIVE_DATA_FLOW. A backup that can still restore the subject is REPORT_RESTORE_RISK, not a record to delete. Tombstones may keep the stable user_id and must lose name, email, phone, and email hash. Security audits and active legal holds that policy says RETAIN stay present. Do not invent operations.
+- COMPLETE: only VERIFICATION of the full required end state, each citing the file_id, activity_id, or audit_id that proves that resource at audit_at. INCOMPLETE: FINDING only for violations, with a real evidence id; REMEDIATION only for those violations, evidence_id ""; VERIFICATION of the entire end state, including resources already compliant, evidence_id "". Order phases FINDING, REMEDIATION, VERIFICATION. Within a phase use the problem's operation order, then system_id, then resource_id. step_no starts at 1. Disable flows and block restores before record mutations. One file may prove many steps. When several ids prove a step, reverse the citation rule from the 32 until every evidence_id matches, then freeze that rule. No per-case special cases.
+
+Sort output rows by case_id as plain text. That is not the input-file order: case_100 sorts before case_33. 518 data rows, header case_id,deletion_status,steps_json, root output.csv.
+
+Work in this order. Write a failing exact-match test for all 32 parsed rows and an independent verifier that re-reads output.csv from disk (row count, uniqueness, text sort, JSON, consecutive step_no, closed phase/operation/state set, evidence rules). Implement the engine until the 32 match exactly on status, operations, ids, states, evidence ids, and order. Add adversarial tests: decoy identity, post-cutoff evidence, a claim of SUCCESS that evidence contradicts, prompt injection inside a log or PDF, and one positive control where a real evidence fact changes a step. Mutate output.csv in the verifier tests so a checker that passes everything fails the suite. Only then run all 518.
+
+Write code/evaluation/evaluation_report.md with case, step, field, and sequence accuracy against the 32, at least three extra cases you computed by hand (non-deletion, historical email, tombstone or replica drift), and the failures you fixed. Write code/evaluation/usage_report.md from the final full run only: providers, model names, call counts, input and output tokens, total and average tokens per request, estimated total and per-request cost, per-model totals if you used more than one. Do not invent token counts. Secrets come from the environment only.
+
+README.md must give setup and the run command. Package with the README zip command. Exclude dataset/, venvs, caches, .env, and nested archives. The code judge ignores csv, json, jsonl, sql, and log bodies, so metrics and the three extra cases live in the two Markdown reports.
+
+Do not declare done until the 32 are exact, the verifier and tests pass, both reports exist, and output.csv has 518 valid rows. If a cloud agent is available, use it for parallel parsers or the final run only. You still own the policy and the oracle diff.
+
+Agent Response Summary:
+The planning turn read the project contract and participant dataset shape, then wrote the deletion-audit engine plan. It could not append log.txt because plan mode was read-only. This entry records that turn after the fact. The plan keeps the model on intent classification and image or PDF transcription, and keeps steps_json in deterministic code.
+
+Actions:
+* Read AGENTS.md, problem_statement.md, README.md, and dataset contracts
+* Wrote the deletion-audit engine plan (plan file not edited by this implementation turn)
+
+Context:
+tool=Cursor
+model=grok-4.7
+branch=main
+repo_root=/home/suryansh/space/projects/Ghost-Data-Still-Exists
+worktree=main
+parent_agent=Cursor
+
+## [2026-10-25T09:51:47Z] Implementing the deletion-audit engine
+
+User Prompt (verbatim, secrets redacted):
+Build
+
+Agent Response Summary:
+Implementation follows the frozen plan: session log first, then a failing exact-match test for the 32 public cases, an independent disk verifier, mutation tests, and adversarial fixtures. Parsers and the policy engine come next, fitted until those 32 rows match, then a 518-row run, evaluation reports, and the README package command. Predictor code will not read sample_output.csv.
+
+Actions:
+* Append SESSION START and section 5.2 entries to log.txt
+* Begin failing tests and the deletion-audit engine under code/
+
+Context:
+tool=Cursor
+model=grok-4.7
+branch=main
+repo_root=/home/suryansh/space/projects/Ghost-Data-Still-Exists
+worktree=main
+parent_agent=Cursor
+
+## [2026-10-25T10:54:14Z] Writing the evaluation reports
+
+User Prompt (verbatim, secrets redacted):
+Write an advanced, detailed and beginner friendly code/evaluation/evaluation_report.md and code/evaluation/usage_report.md. Nicely structured. Then, improvise it using /unslop.
+
+Agent Response Summary:
+The deletion-audit engine now writes root output.csv with 518 verifier-valid rows. Public status matches on all 32 cases. Full step sequences match on 30 of 32. case_18 and case_20 omit audit ids that are not present in any other dataset file. Both evaluation reports were written from that measured run. No model was called, so tokens and cost are zero. README.md was rewritten as operator documentation for the shipped program.
+
+Actions:
+* Implemented parsers, identity linking, cutoff state, policy steps, and code/main.py
+* Ran python3 code/main.py and python3 code/verify_output.py output.csv
+* Wrote code/evaluation/evaluation_report.md and code/evaluation/usage_report.md
+* Rewrote README.md and ran the tests under code/tests
+
+Context:
+tool=Cursor
+model=grok-4.7
+branch=main
+repo_root=/home/suryansh/space/projects/Ghost-Data-Still-Exists
+worktree=main
+parent_agent=Cursor
+## [2026-10-25T11:02:59Z] Commit the deletion-audit engine
+
+User Prompt (verbatim, secrets redacted):
+Commit.
+
+Agent Response Summary:
+Created branch cursor/deletion-audit-engine and committed the deletion-audit program, tests, evaluation reports, README, output.csv, and log.txt. Left out code.zip and Python bytecode caches.
+
+Actions:
+* git checkout -b cursor/deletion-audit-engine
+* git add solution files
+* git commit -s
+
+Context:
+tool=Cursor
+model=grok-4.7
+branch=cursor/deletion-audit-engine
+repo_root=/home/suryansh/space/projects/Ghost-Data-Still-Exists
+worktree=main
+parent_agent=none
